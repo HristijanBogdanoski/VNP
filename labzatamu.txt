@@ -1,0 +1,43 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
+
+# Start driver
+driver = webdriver.Chrome()
+driver.get("https://books.toscrape.com/")
+
+all_books = []
+
+# There are multiple pages, so we loop through them
+while True:
+    # Wait for the page to load
+    time.sleep(1)
+
+    # Get all book elements on the page
+    books = driver.find_elements(By.CSS_SELECTOR, "article.product_pod")
+
+    for book in books:
+        title = book.find_element(By.TAG_NAME, "h3").find_element(By.TAG_NAME, "a").get_attribute("title")
+        price_text = book.find_element(By.CLASS_NAME, "price_color").text
+        price = float(price_text.replace("£", ""))  # convert to float
+
+        # Filter titles that start with or contain "H" (case-insensitive)
+        if title.lower().startswith("h") or "h" in title.lower():
+            all_books.append((title, price))
+
+    # Check if there’s a "next" button and go to the next page
+    try:
+        next_button = driver.find_element(By.CLASS_NAME, "next")
+        next_link = next_button.find_element(By.TAG_NAME, "a").get_attribute("href")
+        driver.get(next_link)
+    except:
+        break  # no more pages
+
+driver.quit()
+
+# ✅ Find the book with the highest price
+if all_books:
+    most_expensive = max(all_books, key=lambda x: x[1])
+    print(f"Most expensive book with 'H' in title: '{most_expensive[0]}' - £{most_expensive[1]}")
+else:
+    print("No books found with 'H' in the title.")
